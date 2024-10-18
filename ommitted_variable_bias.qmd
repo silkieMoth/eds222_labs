@@ -1,0 +1,42 @@
+---
+title: "simulation"
+format: html
+editor: visual
+---
+
+```{r}
+N <- 100
+x1 <- rnorm(N)
+x2 <- rnorm(N) # NO LONGER COORELATED
+```
+
+
+```{r}
+# choose our parameters
+beta0 <- 5
+beta1 <- 1.5
+beta2 <- -0.5
+sigma <- 2
+```
+
+```{r}
+# simulate y
+y <- beta0 + beta1 * x1 + beta2 * x2 + rnorm(N, sd = sigma)
+
+dat <- tibble(y,x1,x2)
+
+```
+
+x variable is exogenous, ie no other variable coorelated with x affects y
+
+```{r}
+#estimate beta1 while ignoring x2
+summary(lm(y ~ x1, data))
+```
+### estiamate of beta1 is 1.4
+
+
+```{r}
+summary(lm(y ~ x1 + x2))
+```
+
