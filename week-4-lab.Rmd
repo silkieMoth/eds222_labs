@@ -58,18 +58,27 @@ Complete the following:
 1.  Using the model specified above, use `lm()` to estimate all three coefficients using the `mpg` data. Make sure you are treating `year` as a categorical variable! Use `summary(lm())` to print the regression results.
 
 ```{r}
-
+hwy_lm <- lm(hwy ~ displ + year + displ : year, data = mpg)
+summary(hwy_lm)
 ```
 
 2.  What does the intercept tell you, in words?
 
+    -   for a car with a engine size of 0, when x2 = 0 (year = 2008), the engine size is 35.79
+
 3.  What does the coefficient on `displ` tell you, in words?
+
+    -   the relationship between hwy mileage and engine size is negative at -3.8
 
 4.  What does the coefficient estimate on the 2008 vintage indicator variable (`year2008`) tell you, in words?
 
-5.  What does the coefficient on `displ:year2008` tell you, in words?[^1]
+    2.  more cars with larger engines started being made in 2008 when compared to 1999
 
-[^1]: Hint: This is tricky. Start by writing down the relationship between miles per gallon and engine size when the car vintage is 2008. Then write the same thing for car vintage 1999. Can you see what role this coefficient plays?
+5.  What does the coefficient on `displ:year2008` tell you, in words?[^week-4-lab-1]
+
+    -   
+
+[^week-4-lab-1]: Hint: This is tricky. Start by writing down the relationship between miles per gallon and engine size when the car vintage is 2008. Then write the same thing for car vintage 1999. Can you see what role this coefficient plays?
 
 # Section 2: Plotting an interaction model
 
@@ -77,9 +86,24 @@ Interaction models are difficult to interpret. Writing out the algebra of what e
 
 **Intuition check before you dive in:** What do you expect to see in terms of intercepts and slopes of your vintage-specific regression lines?
 
+i dont fucking know
+
 We will use `ggplot2` with `augment()` to obtain predictions, in combination with `geom_line()`.
 
 ```{r}
+ggplot(augment(hwy_lm), aes(x = displ, y = hwy, color = year)) +
+  #geom_line(aes(y = .fitted)) +
+  geom_point() +
+  # (x2 = 0 OR year = 1999)
+  geom_abline(slope = coef(hwy_lm)["displ"],
+              intercept = coef(hwy_lm)["(Intercept)"],
+              color = "orange") +
+  # (x2 = 1 OR year = 2008)
+  geom_abline(slope = coef(hwy_lm)['displ'] + 
+                coef(hwy_lm)['displ:year2008'], 
+              intercept = coef(hwy_lm)['(Intercept)'] +
+                coef(hwy_lm)['year2008'],
+              color = 'brown')
 
 ```
 

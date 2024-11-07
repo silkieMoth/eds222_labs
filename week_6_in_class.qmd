@@ -1,0 +1,157 @@
+---
+title: "logistic_regression?"
+format: html
+editor: visual
+---
+
+```{r}
+suppressMessages(library(tidyverse))
+theme_set(theme_bw())
+
+drinking_water <- read_csv(here::here('data', "drinking_water.csv"), show_col_types = FALSE)
+```
+
+# Questions
+
+- What do you think each row represents?
+
+a observation at a given year
+
+- What columns do you think represent:
+    - Drinking water health violations?
+      'health'
+      
+    - Percent Black and Hispanic population in the utility district?
+      'pctblack', 'pcthisp'  
+    
+    - Median household income in the utility district?
+      'medianincomehouse'
+    
+    
+- One column includes a count of drinking water health violations. How would you create a new column with a binary variable representing whether there were any violations?
+```{r}
+# mutate
+# ifelse vs if_else
+# ifelse = base, if_else = tidyverse
+# base will let you combine data types
+
+drinking_water <- drinking_water %>% 
+  mutate(violation = if_else(health > 0, 1, 0))
+```
+  
+    
+- Create a scatter plot of violations against race (percent Black population), ethnicity (percent Hispanic population), and SES (median household income). What visualization issues do we get with a scatter plot? How could you address that?
+
+The points are overplotted, so we can summarize within bins
+
+```{r}
+drinking_water_binned <- drinking_water %>%
+  mutate(pcthisp = round(pcthisp * 5) / 5) %>%
+  group_by(pcthisp) %>%
+  summarize(violation = mean(violation))
+
+ggplot(drinking_water_binned, aes(pcthisp, violation)) + geom_point()
+```
+
+```{r}
+pcthisp_lm <- lm(violation ~ pcthisp, drinking_water_binned)
+summary(pcthisp_lm)
+```
+
+## Questions
+
+- Plot the residuals. What pattern do you notice?
+```{r}
+resids <- as.tibble(resid(pcthisp_lm))
+
+drinking_water_complete <- drop_na(drinking_water_binned, pcthisp, violation)
+
+drinking_water_complete <- drinking_water_complete %>% mutate(resids = resid(pcthisp_lm))
+
+ggplot(drinking_water_complete, aes(resids, violation)) + 
+  geom_point()
+```
+
+
+### Make a plot of the residuals.
+
+- Plot the raw data and the predicted probabilities for violations. Are there any obvious problems?
+
+### Plot raw data and predicted probabilities
+
+```{r}
+ggplot(drinking_water_binned, aes(pcthisp, violation)) + 
+  geom_point() +
+  geom_smooth(method = lm)
+```
+
+```{r}
+# Inverse logit utility function
+inv_logit <- function(x) exp(x) / (1 + exp(x))
+  
+# Likelihood of the coefficients, given the data
+likelihood_fun <- function(coefficients, data) {
+  # coefficients looks like: c(beta0 = ???, beta1 = ???)
+  # Calculate logit(p) based on coefficients and predictor
+  logit_p <- coefficients['beta0'] + coefficients['beta1'] * data$pcthisp
+
+  # Invert the logit to get p
+  p <- inv_logit(logit_p)
+  
+  # Use the PMF of the Bernoulli to get our log likelihoods
+  loglik <- dbinom(data$violation, size = 1, prob = p, log = TRUE)
+  
+  # Sum the negative log likelihood
+  negloglik <- -sum(loglik)
+}
+
+# Use an optimization function to get the maximum likelihood coefficients
+drinking_water_complete <- drop_na(drinking_water, pcthisp, violation)
+coef_optim <- optim(c(beta0 = 0, beta1 = 0), 
+                    likelihood_fun, 
+                    data = drinking_water_complete)
+```
+
+What were your maximum likelihood estimates for and...
+
+
+# What are the maximum likelihood estimates for our coefficients?
+```{r}
+coef_optim$par
+beta0_hat <- coef_optim$par['beta0']
+beta1_hat <- coef_optim$par['beta1'] 
+```
+
+
+# Hint: explore coef_optim
+
+    What’s the predicted probability of drinking water violations for communities with 0%, 50%, and 100% Hispanic population?
+    Plot the predicted probability across the whole range 0-100% Hispanic.
+
+# Create and plot predictions
+
+- How much does the probability of a drinking water violation change when percent Hispanic population increases from 10 to 20%, 45 to 55%, and 80 to 90%?
+
+```{r}
+logit_p <- beta0_hat + beta1_hat * c(0,50,100)
+p <- inv_logit(logit_p)
+p
+
+# create and plot predictions
+tibble(pcthisp = 0:100,
+       logit_p = beta0_hat + beta_1_hat * pcthisp,
+       p = inv_logit(logit_p)) %>% 
+  ggplot(aes(pcthisp, p)) +
+  geom_line()
+
+
+```
+
+
+
+    How would you interpret the coefficients? What do the slope and intercept mean in this context? Where is the relationship linear, and where is it non-linear?
+    Create a “DEM” of the likelihood landscape for 
+
+and . Choose a range of and values around your best estimates, calculate the likelihood for each combination, and create a figure with on the x-axis, on the y-axis, and the likelihood as the fill. Add a point for
+.
+Bonus problem: add contours!

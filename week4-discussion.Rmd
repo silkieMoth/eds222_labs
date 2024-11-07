@@ -49,11 +49,11 @@ beta0_hat <- coef(yellowstone_mod)[1]
 beta1_hat <- coef(yellowstone_mod)[2]
 beta2_hat <- coef(yellowstone_mod)[3]
 beta3_hat <- coef(yellowstone_mod)[4]
-prediction <- expand_grid(
+prediction <- expand_grid( # get a df of simulated values for canopy_height and wolf_density
   canopy_height = seq(70, 130, length.out = 5),
   wolf_density = c(1.5, 3, 4.5)
 ) %>% 
-  mutate(yhat = beta0_hat + beta1_hat * canopy_height + beta2_hat * wolf_density +
+  mutate(yhat = beta0_hat + beta1_hat * canopy_height + beta2_hat * wolf_density + #add column for regression eq
            beta3_hat * canopy_height * wolf_density)
 
 ggplot(yellowstone, aes(canopy_height, elk_density, color = wolf_density)) +
@@ -63,7 +63,15 @@ ggplot(yellowstone, aes(canopy_height, elk_density, color = wolf_density)) +
   theme_classic()
 ```
 
+interpreting this graph - top line: elkdensity/canopyheight when wolf = 1.5 -
+
+middle line: elkdensity/canopyheight when wolf = 3 -
+
+bottom line: elkdensity/canopyheight when wolf = 4.5
+
 Questions:
 
-* Where would the line for wolf density = 4 be? How about wolf density = 2?
-* What's the slope of canopy height when wolf density is 1.5, 3, and 4.5?
+-   Where would the line for wolf density = 4 be? How about wolf density = 2?
+    -   4 = lightest, lowest line, 2 = darkest, highest line
+-   What's the slope of canopy height when wolf density is 1.5, 3, and 4.5?
+    -   1.5, lower then darkest line, 4.5, higher then lighest line
